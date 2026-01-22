@@ -1,0 +1,138 @@
+/**
+ * OPTIONAL: Enhanced App.tsx with MatchboxVisualizer
+ * 
+ * This shows how to add the visualization component to your app.
+ * Copy this content to App.tsx if you want to see MENACE's decision process!
+ */
+
+import {
+  Container,
+  Title,
+  Text,
+  Button,
+  Group,
+  Paper,
+  Stack,
+  Box,
+  Divider,
+} from "@mantine/core";
+import { RotateCcw } from "lucide-react";
+import { useGameStore } from "./store/useGameStore";
+import { Board } from "./components/Board";
+import { GameInfo } from "./components/GameInfo";
+import { Stats } from "./components/Stats";
+import { MatchboxVisualizer } from "./components/MatchboxVisualizer"; // NEW!
+
+function App() {
+  // Using Zustand store with selective subscriptions for optimal re-renders
+  const board = useGameStore((state) => state.board);
+  const isPlayerTurn = useGameStore((state) => state.isPlayerTurn);
+  const gameStatus = useGameStore((state) => state.gameStatus);
+  const stats = useGameStore((state) => state.stats);
+  const humanMove = useGameStore((state) => state.humanMove);
+  const resetGame = useGameStore((state) => state.resetGame);
+
+  return (
+    <Box
+      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    >
+      {/* Header */}
+      <Box
+        component="header"
+        style={{
+          borderBottom: "1px solid var(--mantine-color-dark-4)",
+          padding: "1.5rem 0",
+        }}
+      >
+        <Container size="lg">
+          <Title order={1} fw={300} style={{ letterSpacing: "0.05em" }}>
+            Matchbox AI
+          </Title>
+        </Container>
+      </Box>
+
+      {/* Main Game Section */}
+      <Box component="main" style={{ flex: 1, padding: "3rem 0" }}>
+        <Container size="md">
+          <Stack gap="xl">
+            <GameInfo isPlayerTurn={isPlayerTurn} gameStatus={gameStatus} />
+
+            <Group justify="center">
+              <Paper
+                shadow="md"
+                p="xl"
+                radius="md"
+                style={{
+                  display: "inline-block",
+                }}
+              >
+                <Board
+                  squares={board}
+                  onClick={humanMove}
+                  disabled={!isPlayerTurn || gameStatus !== "PLAYING"}
+                />
+              </Paper>
+            </Group>
+
+            <Group justify="center">
+              <Button
+                onClick={resetGame}
+                leftSection={<RotateCcw size={18} />}
+                variant="light"
+                size="md"
+              >
+                New Game
+              </Button>
+            </Group>
+
+            {/* NEW: Matchbox Visualizer */}
+            <MatchboxVisualizer />
+
+            <Stats stats={stats} />
+          </Stack>
+        </Container>
+
+        <Divider my="xl" />
+
+        {/* Blog Section Placeholder */}
+        <Container size="sm">
+          <Stack gap="md">
+            <Title order={2} size="h3" fw={400}>
+              About MENACE
+            </Title>
+            <Text c="dimmed">
+              MENACE (Machine Educable Noughts And Crosses Engine) learns to play
+              tic-tac-toe through reinforcement learning. Each game state is
+              represented by a "matchbox" containing beads. The number of beads
+              for each position indicates how likely MENACE is to play there.
+            </Text>
+            <Text c="dimmed">
+              When MENACE wins, beads are added to the matchboxes (reward).
+              When it loses, beads are removed (punishment). Over time, MENACE
+              learns optimal strategies through trial and error. The visualizer
+              above shows the bead distribution for each position MENACE is
+              currently considering.
+            </Text>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* Footer */}
+      <Box
+        component="footer"
+        style={{
+          borderTop: "1px solid var(--mantine-color-dark-4)",
+          padding: "1.5rem 0",
+        }}
+      >
+        <Container size="lg">
+          <Text size="sm" c="dimmed" ta="center">
+            Built by Ahmed Khan
+          </Text>
+        </Container>
+      </Box>
+    </Box>
+  );
+}
+
+export default App;
