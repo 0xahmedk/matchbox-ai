@@ -20,6 +20,7 @@ import {
   checkWinner,
   getCanonicalState,
 } from "../engine";
+import type { PlayStyle } from "../engine";
 
 type GameStatus = "PLAYING" | "WIN" | "LOSS" | "DRAW";
 
@@ -27,7 +28,7 @@ type GameStatus = "PLAYING" | "WIN" | "LOSS" | "DRAW";
  * SINGLETON: MenaceAgent instance
  * Lives outside the store to persist across resets and re-renders
  */
-const menaceAgent = new MenaceAgent("O");
+const globalBrain = new MenaceAgent("O");
 
 interface GameState {
   // Core game state
@@ -60,6 +61,10 @@ interface GameState {
   runSimulation: (batchSize: number) => void;
   resetBrain: () => void;
 
+  // Play style (controls MENACE selection behaviour)
+  playStyle: "PROBABILISTIC" | "MASTER";
+  setPlayStyle: (style: "PROBABILISTIC" | "MASTER") => void;
+
   // Actions
   humanMove: (index: number) => void;
   aiMove: () => Promise<void>;
@@ -80,6 +85,9 @@ export const useGameStore = create<GameState>()(
       activeBoxId: null,
       currentBeads: null,
       history: [],
+      playStyle: "PROBABILISTIC",
+      setPlayStyle: (style: "PROBABILISTIC" | "MASTER") =>
+        set(() => ({ playStyle: style })),
       trainingStats: [],
       stats: {
         gamesPlayed: 0,
@@ -116,7 +124,7 @@ export const useGameStore = create<GameState>()(
               status === "LOSS" ? state.stats.losses + 1 : state.stats.losses,
             draws:
               status === "DRAW" ? state.stats.draws + 1 : state.stats.draws,
-            statesLearned: menaceAgent.getMemorySize(),
+            statesLearned: globalBrain.getMemorySize(),
           },
         }));
       },
@@ -149,7 +157,7 @@ export const useGameStore = create<GameState>()(
         if (newStatus !== "PLAYING") {
           const winner = checkWinner(newBoard);
           if (winner) {
-            menaceAgent.train(winner);
+            globalBrain.train(winner);
           }
           state._updateStats(newStatus);
         } else {
@@ -178,12 +186,22 @@ export const useGameStore = create<GameState>()(
         // Get canonical state for visualization
         const { canonical: canonicalStateId } = getCanonicalState(state.board);
 
-        // Get AI move from MENACE
-        const moveIndex = menaceAgent.makeMove(state.board);
+        // Get AI move from MENACE (singleton) using current playStyle
+        const style: PlayStyle = state.playStyle || "PROBABILISTIC";
+        const moveIndex = globalBrain.makeMove(state.board, style);
 
         // Get matchbox data for visualization
-        const matchbox = menaceAgent.getMatchbox(canonicalStateId);
+        const matchbox = globalBrain.getMatchbox(canonicalStateId);
         const beads = matchbox ? [...matchbox.beads] : null;
+
+        // Debug: log memory size and bead distribution so we can verify training effects
+        try {
+          console.log(
+            `MENACE memory size: ${globalBrain.getMemorySize()} | canonical: ${canonicalStateId} | beads: ${beads}`,
+          );
+        } catch {
+          /* ignore logging failures */
+        }
 
         // Make move
         const newBoard = makeGameMove(state.board, moveIndex, "O");
@@ -191,20 +209,34 @@ export const useGameStore = create<GameState>()(
         // Check if game ends after AI move
         const newStatus = state._checkGameResult(newBoard);
 
-        // Update state with visualization data
-        set({
+        // Record history: include snapshot of the matchbox beads and board BEFORE making the move
+        // Try to obtain the last move record from the agent to get canonical move index and transform
+        const lastMoveRecord = globalBrain.getLastMoveRecord();
+
+        const historyEntry = {
+          canonicalState: canonicalStateId,
+          moveIndex: lastMoveRecord ? lastMoveRecord.moveIndex : moveIndex,
+          actualMoveIndex: moveIndex,
+          transformIndex: lastMoveRecord ? lastMoveRecord.transformIndex : 0,
+          boxSnapshot: beads ? [...beads] : undefined,
+          boardSnapshot: [...state.board],
+        } as MoveRecord;
+
+        // Update state with visualization data and append history
+        set((s) => ({
           board: newBoard,
           gameStatus: newStatus,
           isPlayerTurn: newStatus === "PLAYING" ? true : false,
           activeBoxId: canonicalStateId,
           currentBeads: beads,
-        });
+          history: [...s.history, historyEntry],
+        }));
 
         // Handle game end
         if (newStatus !== "PLAYING") {
           const winner = checkWinner(newBoard);
           if (winner) {
-            menaceAgent.train(winner);
+            globalBrain.train(winner);
           }
           state._updateStats(newStatus);
         }
@@ -222,7 +254,7 @@ export const useGameStore = create<GameState>()(
           activeBoxId: null,
           currentBeads: null,
           history: [],
-          // Note: stats persist, menaceAgent singleton persists
+          // Note: stats persist, globalBrain singleton persists
         });
       },
 
@@ -235,31 +267,24 @@ export const useGameStore = create<GameState>()(
       runSimulation: (batchSize: number) => {
         if (batchSize <= 0) return;
 
-        // Create a training agent that plays as 'X'
-        const trainingAgent = new MenaceAgent("X");
-        // Import current memory so training continues from current knowledge
-        try {
-          trainingAgent.importMemory(menaceAgent.exportMemory());
-        } catch {
-          // ignore if export/import fails; trainingAgent starts fresh
-        }
-
+        // Train the singleton globalBrain in-place so UI immediately benefits
         // Local counters for this batch
         let wins = 0;
         let draws = 0;
         let losses = 0;
+
+        const brainPlayer = globalBrain.getPlayer();
 
         for (let i = 0; i < batchSize; i++) {
           // Fresh board
           let board = createEmptyBoard();
           let turn: "X" | "O" = "X";
 
-          // Reset any history on training agent for safety
-          trainingAgent.resetGameHistory();
+          // Reset any game history stored on the brain
+          globalBrain.resetGameHistory();
 
           // Play until terminal
           while (true) {
-            // Check terminal first
             const status = ((): GameStatus => {
               const w = checkWinner(board);
               if (w === "X") return "WIN";
@@ -270,41 +295,53 @@ export const useGameStore = create<GameState>()(
 
             if (status !== "PLAYING") break;
 
-            if (turn === "X") {
-              // MENACE (training agent) move
-              const move = trainingAgent.makeMove(board);
-              board = makeGameMove(board, move, "X");
-              turn = "O";
+            if (turn === brainPlayer) {
+              // MENACE (globalBrain) move
+              const move = globalBrain.makeMove(board);
+              board = makeGameMove(board, move, turn);
+              turn = turn === "X" ? "O" : "X";
             } else {
               // Random agent move
               const valid = getValidMoves(board);
               if (valid.length === 0) break;
               const choice = valid[Math.floor(Math.random() * valid.length)];
-              board = makeGameMove(board, choice, "O");
-              turn = "X";
+              board = makeGameMove(board, choice, turn);
+              turn = turn === "X" ? "O" : "X";
             }
           }
 
-          // Game finished - determine winner and train
+          // Game finished - determine winner and train the global brain
           const winner = checkWinner(board);
           const result = winner ? winner : "Draw";
-          trainingAgent.train(result);
+          globalBrain.train(result);
 
-          // Update local counters (from perspective of MENACE as 'X')
-          if (result === "X") wins += 1;
-          else if (result === "O") losses += 1;
-          else draws += 1;
+          // Update local counters relative to the brain's player
+          if (result === brainPlayer) wins += 1;
+          else if (result === "Draw") draws += 1;
+          else losses += 1;
         }
 
-        // Export trained memory back to the running singleton agent so UI uses updated brain
+        // After training, update the UI: fetch beads for the current board's canonical box
+        const currentBoard = get().board;
+        const { canonical: currentCanonical } = getCanonicalState(currentBoard);
+        const currentBox = globalBrain.getMatchbox(currentCanonical);
+        const currentBeads = currentBox ? [...currentBox.beads] : null;
+
+        // Console debug summary using canonical empty board representation
+        const emptyCanon = "_________";
+        const startBox = globalBrain.getMatchbox(emptyCanon);
         try {
-          const mem = trainingAgent.exportMemory();
-          menaceAgent.importMemory(mem);
+          console.log(
+            "Training Complete. Total Games:",
+            batchSize,
+            "- Beads in Start Box:",
+            startBox ? startBox.beads : null,
+          );
         } catch {
-          // ignore
+          /* ignore */
         }
 
-        // Update global stats and trainingStats in a single batch update
+        // Update global stats and trainingStats, and push visualization beads
         set((state) => {
           const totalGames = state.stats.gamesPlayed + batchSize;
           const newWins = state.stats.wins + wins;
@@ -324,9 +361,12 @@ export const useGameStore = create<GameState>()(
               wins: newWins,
               losses: newLosses,
               draws: newDraws,
-              statesLearned: menaceAgent.getMemorySize(),
+              statesLearned: globalBrain.getMemorySize(),
             },
             trainingStats: [...state.trainingStats, newPoint],
+            // ensure UI shows updated beads for current board
+            activeBoxId: currentCanonical,
+            currentBeads: currentBeads,
           };
         });
       },
@@ -335,7 +375,7 @@ export const useGameStore = create<GameState>()(
        * Reset full MENACE memory (forget learned beads)
        */
       resetBrain: () => {
-        menaceAgent.resetMemory();
+        globalBrain.resetMemory();
         set({
           trainingStats: [],
           stats: {
@@ -358,4 +398,4 @@ export const useGameStore = create<GameState>()(
  * Export the singleton agent for advanced use cases
  * (e.g., exporting/importing memory, manual training)
  */
-export { menaceAgent };
+export { globalBrain };

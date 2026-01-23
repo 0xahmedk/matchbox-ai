@@ -2,11 +2,11 @@
  * Core types for the MENACE Tic-Tac-Toe implementation
  */
 
-export type Player = 'X' | 'O';
+export type Player = "X" | "O";
 
 export type Board = (Player | null)[];
 
-export type GameResult = 'X' | 'O' | 'Draw' | null;
+export type GameResult = "X" | "O" | "Draw" | null;
 
 /**
  * Represents a matchbox in MENACE's memory
@@ -26,6 +26,10 @@ export interface MoveRecord {
   moveIndex: number; // Index in the canonical board
   actualMoveIndex: number; // Index in the actual board
   transformIndex: number; // Which transformation was applied (0-7)
+  // Snapshot of bead counts at the time the decision was made
+  boxSnapshot?: number[];
+  // Snapshot of the actual board (before the move) for display/analysis
+  boardSnapshot?: Board;
 }
 
 /**

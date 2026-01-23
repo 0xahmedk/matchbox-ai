@@ -13,8 +13,9 @@ import { useGameStore } from "./store/useGameStore";
 import { Board } from "./components/Board";
 import { GameInfo } from "./components/GameInfo";
 import { Stats } from "./components/Stats";
-import { BrainPanel } from "./components/BrainPanel";
+import { MatchboxTape } from "./components/MatchboxTape";
 import { TrainingPanel } from "./components/TrainingPanel";
+import { Switch, Box as MantineBox } from "@mantine/core";
 
 function App() {
   // Using Zustand store with selective subscriptions for optimal re-renders
@@ -24,6 +25,8 @@ function App() {
   const stats = useGameStore((state) => state.stats);
   const humanMove = useGameStore((state) => state.humanMove);
   const resetGame = useGameStore((state) => state.resetGame);
+  const playStyle = useGameStore((s) => s.playStyle);
+  const setPlayStyle = useGameStore((s) => s.setPlayStyle);
 
   return (
     <Box
@@ -69,12 +72,34 @@ function App() {
                   >
                     New Game
                   </Button>
+
+                  <MantineBox
+                    style={{
+                      marginTop: 12,
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Switch
+                      checked={playStyle === "MASTER"}
+                      onChange={(e) =>
+                        setPlayStyle(
+                          e.currentTarget.checked ? "MASTER" : "PROBABILISTIC",
+                        )
+                      }
+                      size="md"
+                      label={
+                        playStyle === "MASTER" ? "Master Mode" : "Probabilistic"
+                      }
+                    />
+                  </MantineBox>
                 </Stack>
               </Grid.Col>
 
               {/* Right: MENACE Brain Visualization */}
               <Grid.Col span={{ base: 12, md: 6 }}>
-                <BrainPanel />
+                {/* Replaced BrainPanel with MatchboxTape that shows the sequence of matchboxes used */}
+                <MatchboxTape />
                 <div style={{ marginTop: 16 }}>
                   <TrainingPanel />
                 </div>

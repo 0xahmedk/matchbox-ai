@@ -98,7 +98,6 @@ export function BrainPanel() {
         <Box style={{ display: "flex", justifyContent: "center" }}>
           <Matchbox
             beadCounts={currentBeads}
-            isLastMove={true}
             label={`State: ${activeBoxId.slice(0, 9)}`}
           />
         </Box>

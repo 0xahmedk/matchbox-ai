@@ -13,12 +13,14 @@ import type {
   MoveRecord,
   Player,
 } from "./types";
-import { getValidMoves, countMoves } from "./gameUtils";
+import { getValidMoves } from "./gameUtils";
 import {
   getCanonicalState,
   mapCanonicalMoveToActual,
   TRANSFORMATIONS,
 } from "./symmetry";
+
+export type PlayStyle = "PROBABILISTIC" | "MASTER";
 
 /**
  * Default configuration for MENACE
@@ -48,6 +50,42 @@ export class MenaceAgent {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.player = player;
     this.currentGameHistory = [];
+  }
+
+  /**
+   * Return the last recorded MoveRecord for the current game history
+   * (useful for UI to inspect what canonical move was chosen).
+   */
+  getLastMoveRecord(): MoveRecord | null {
+    if (this.currentGameHistory.length === 0) return null;
+    return this.currentGameHistory[this.currentGameHistory.length - 1];
+  }
+
+  /**
+   * Get initial beads for a given turn number following Michie 1961 rules
+   * Turn mapping (turnNumber):
+   *  - Turn 1: 4 beads per valid move
+   *  - Turn 3: 3 beads per valid move
+   *  - Turn 5: 2 beads per valid move
+   *  - Turn 7 and later: 1 bead per valid move
+   *
+   * @param turnNumber - 1-based turn number derived from empty squares
+   */
+  private getInitialBeads(turnNumber: number): number {
+    // Michie's scheme applies by parity: odd turns have specific bead counts
+    if (turnNumber <= 1) return 4; // safety: treat 0/1 as first move
+    if (turnNumber === 3) return 3;
+    if (turnNumber === 5) return 2;
+    if (turnNumber >= 7) return 1;
+
+    // For intermediate even turns (2,4,6) choose the bead count of the next odd turn
+    // This mirrors the intention of decreasing beads on later moves.
+    if (turnNumber === 2) return 4;
+    if (turnNumber === 4) return 3;
+    if (turnNumber === 6) return 2;
+
+    // Fallback
+    return 1;
   }
 
   /**
@@ -88,17 +126,14 @@ export class MenaceAgent {
    */
   private initializeMatchbox(board: Board, validMoves: number[]): Matchbox {
     const beads = Array(9).fill(0);
-    const moveCount = countMoves(board);
+    // Calculate empty squares and derive a turn number used by Michie's scheme
+    // Turn number mapping (per instructions): 9 empty -> Turn 1, 7 empty -> Turn 3, 5 empty -> Turn 5, 3 empty -> Turn 7
+    // We compute a turn number as (10 - emptyCount) so empty=9 => 1, empty=7 => 3, empty=5 => 5, empty=3 => 7
+    const emptyCount = board.filter((b) => b === null).length;
+    const turnNumber = 10 - emptyCount;
 
-    // Determine bead count based on game stage
-    let beadCount: number;
-    if (moveCount <= 2) {
-      beadCount = this.config.initialBeadsEarly;
-    } else if (moveCount <= 5) {
-      beadCount = this.config.initialBeadsMid;
-    } else {
-      beadCount = this.config.initialBeadsLate;
-    }
+    // Determine bead count using Michie's per-move rules via helper
+    const beadCount = this.getInitialBeads(turnNumber);
 
     // Add beads only for valid moves
     let totalBeads = 0;
@@ -168,6 +203,92 @@ export class MenaceAgent {
   }
 
   /**
+   * Generate a command (move) for the given board according to the play style.
+   * Returns canonical and actual indices along with transform info.
+   */
+  getCommand(
+    board: Board,
+    style: PlayStyle = "PROBABILISTIC",
+  ): {
+    canonicalMoveIndex: number;
+    actualMoveIndex: number;
+    transformIndex: number;
+    canonicalState: string;
+    matchbox?: Matchbox;
+  } {
+    const { canonical, transformIndex } = getCanonicalState(board);
+
+    // Ensure matchbox exists
+    let matchbox = this.memory.get(canonical);
+    if (!matchbox) {
+      const canonicalBoard: Board = canonical.split("").map((char) => {
+        if (char === "X") return "X";
+        if (char === "O") return "O";
+        return null;
+      });
+      const validMoves = getValidMoves(canonicalBoard);
+      matchbox = this.initializeMatchbox(canonicalBoard, validMoves);
+      this.memory.set(canonical, matchbox);
+    }
+
+    // Map actual valid moves to canonical positions
+    const actualValidMoves = getValidMoves(board);
+    const canonicalValidMoves: number[] = [];
+    const transform = TRANSFORMATIONS[transformIndex];
+    for (const actualMove of actualValidMoves) {
+      canonicalValidMoves.push(transform(actualMove));
+    }
+
+    let canonicalMoveIndex: number;
+
+    if (style === "MASTER") {
+      // Greedy: pick the canonical valid move with highest bead count
+      let maxBeads = -Infinity;
+      const best: number[] = [];
+      for (const mv of canonicalValidMoves) {
+        const b = matchbox!.beads[mv];
+        if (b > maxBeads) {
+          maxBeads = b;
+          best.length = 0;
+          best.push(mv);
+        } else if (b === maxBeads) {
+          best.push(mv);
+        }
+      }
+
+      if (best.length === 0) {
+        // No beads -> fallback random valid canonical move
+        canonicalMoveIndex =
+          canonicalValidMoves[
+            Math.floor(Math.random() * canonicalValidMoves.length)
+          ];
+      } else {
+        // Tie-break randomly among best
+        canonicalMoveIndex = best[Math.floor(Math.random() * best.length)];
+      }
+    } else {
+      // Probabilistic selection
+      canonicalMoveIndex = this.selectMoveFromMatchboxFiltered(
+        matchbox!,
+        canonicalValidMoves,
+      );
+    }
+
+    const actualMoveIndex = mapCanonicalMoveToActual(
+      canonicalMoveIndex,
+      transformIndex,
+    );
+
+    return {
+      canonicalMoveIndex,
+      actualMoveIndex,
+      transformIndex,
+      canonicalState: canonical,
+      matchbox,
+    };
+  }
+
+  /**
    * Make a move on the given board
    *
    * Process:
@@ -180,58 +301,18 @@ export class MenaceAgent {
    * @param board - The current game board (actual orientation)
    * @returns The index where MENACE wants to play (on actual board)
    */
-  makeMove(board: Board): number {
-    // Step 1: Get canonical representation
-    const { canonical, transformIndex } = getCanonicalState(board);
+  makeMove(board: Board, style: PlayStyle = "PROBABILISTIC"): number {
+    const cmd = this.getCommand(board, style);
 
-    // Step 2: Get or create matchbox
-    let matchbox = this.memory.get(canonical);
-
-    if (!matchbox) {
-      // Convert canonical string back to board to get valid moves
-      // canonical string format: 'X', 'O', or '_' for empty
-      const canonicalBoard: Board = canonical.split("").map((char) => {
-        if (char === "X") return "X";
-        if (char === "O") return "O";
-        return null;
-      });
-      const validMoves = getValidMoves(canonicalBoard);
-      matchbox = this.initializeMatchbox(canonicalBoard, validMoves);
-      this.memory.set(canonical, matchbox);
-    }
-
-    // Step 3: Get valid moves on ACTUAL board and map them to canonical positions
-    const actualValidMoves = getValidMoves(board);
-    const canonicalValidMoves: number[] = [];
-
-    // Map each actual valid move to its canonical position
-    const transform = TRANSFORMATIONS[transformIndex];
-    for (const actualMove of actualValidMoves) {
-      const canonicalMove = transform(actualMove);
-      canonicalValidMoves.push(canonicalMove);
-    }
-
-    // Step 4: Select move from matchbox, but only from currently valid positions
-    const canonicalMoveIndex = this.selectMoveFromMatchboxFiltered(
-      matchbox,
-      canonicalValidMoves,
-    );
-
-    // Step 5: Map back to actual board
-    const actualMoveIndex = mapCanonicalMoveToActual(
-      canonicalMoveIndex,
-      transformIndex,
-    );
-
-    // Step 6: Record this move for training
+    // Record this move for training (store canonicalState and transformIndex so UI can align)
     this.currentGameHistory.push({
-      canonicalState: canonical,
-      moveIndex: canonicalMoveIndex,
-      actualMoveIndex: actualMoveIndex,
-      transformIndex: transformIndex,
+      canonicalState: cmd.canonicalState,
+      moveIndex: cmd.canonicalMoveIndex,
+      actualMoveIndex: cmd.actualMoveIndex,
+      transformIndex: cmd.transformIndex,
     });
 
-    return actualMoveIndex;
+    return cmd.actualMoveIndex;
   }
 
   /**
@@ -244,19 +325,18 @@ export class MenaceAgent {
    *
    * @param result - The game result ('X', 'O', or 'Draw')
    */
-  train(result: "X" | "O" | "Draw"): void {
-    // Determine reward based on result
-    let reward: number;
-    if (result === this.player) {
-      reward = this.config.winReward;
-    } else if (result === "Draw") {
-      reward = this.config.drawReward;
-    } else {
-      reward = this.config.lossReward;
-    }
+  train(result: "X" | "O" | "Draw"): number | void {
+    // According to the requested scheme: Win +3, Draw +1, Loss: remove the bead used
+    // We will apply these directly rather than using config values to ensure exact behaviour
 
-    // Apply reward to all moves in the game history
-    for (const move of this.currentGameHistory) {
+    // For each move in history, update the bead counts appropriately
+    // If after applying a punishment a matchbox ends up with all zeros, return -1 to signal resign
+
+    const isWin = result === this.player;
+    const isDraw = result === "Draw";
+
+    for (let i = 0; i < this.currentGameHistory.length; i++) {
+      const move = this.currentGameHistory[i];
       const matchbox = this.memory.get(move.canonicalState);
 
       if (!matchbox) {
@@ -264,13 +344,35 @@ export class MenaceAgent {
         continue;
       }
 
-      // Update bead count for the move that was made
-      const oldCount = matchbox.beads[move.moveIndex];
-      const newCount = Math.max(0, oldCount + reward); // Don't go below 0
-      matchbox.beads[move.moveIndex] = newCount;
+      const idx = move.moveIndex;
+      const oldCount = matchbox.beads[idx];
 
-      // Update total beads
-      matchbox.totalBeads += newCount - oldCount;
+      if (isWin) {
+        // Win: add 3 beads
+        const add = 3;
+        matchbox.beads[idx] = oldCount + add;
+        matchbox.totalBeads += add;
+      } else if (isDraw) {
+        // Draw: add 1 bead
+        const add = 1;
+        matchbox.beads[idx] = oldCount + add;
+        matchbox.totalBeads += add;
+      } else {
+        // Loss: remove the bead used (decrement by 1)
+        const dec = 1;
+        const newCount = Math.max(0, oldCount - dec);
+        const delta = newCount - oldCount;
+        matchbox.beads[idx] = newCount;
+        matchbox.totalBeads += delta;
+
+        // If all beads in this matchbox now zero, return -1 to indicate resignation
+        const allZero = matchbox.beads.every((b) => b === 0);
+        if (allZero) {
+          // Clear history (we still want prior moves to be punished by the caller observing -1)
+          this.currentGameHistory = [];
+          return -1;
+        }
+      }
     }
 
     // Clear history for next game
