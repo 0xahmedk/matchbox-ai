@@ -14,6 +14,7 @@ import { Board } from "./components/Board";
 import { GameInfo } from "./components/GameInfo";
 import { Stats } from "./components/Stats";
 import { BrainPanel } from "./components/BrainPanel";
+import { TrainingPanel } from "./components/TrainingPanel";
 
 function App() {
   // Using Zustand store with selective subscriptions for optimal re-renders
@@ -74,6 +75,9 @@ function App() {
               {/* Right: MENACE Brain Visualization */}
               <Grid.Col span={{ base: 12, md: 6 }}>
                 <BrainPanel />
+                <div style={{ marginTop: 16 }}>
+                  <TrainingPanel />
+                </div>
               </Grid.Col>
             </Grid>
 
@@ -115,7 +119,7 @@ function App() {
       >
         <Container size="lg">
           <Text size="sm" c="dimmed" ta="center">
-            Built by Ahmed Khan
+            Built with ❤️ by Ahmed
           </Text>
         </Container>
       </Box>
