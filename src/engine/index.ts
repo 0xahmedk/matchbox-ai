@@ -35,3 +35,4 @@ export {
 // MENACE Agent
 export { MenaceAgent } from "./MenaceAgent";
 export type { PlayStyle } from "./MenaceAgent";
+export { WinBlockAgent } from "./WinBlockAgent";

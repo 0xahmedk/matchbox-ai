@@ -18,14 +18,7 @@ import {
 // 1. INITIALIZE MENACE AGENT
 // ============================================
 
-const menace = new MenaceAgent("O", {
-  initialBeadsEarly: 8,
-  initialBeadsMid: 4,
-  initialBeadsLate: 2,
-  winReward: 3,
-  drawReward: 1,
-  lossReward: -1,
-});
+const menace = new MenaceAgent("O");
 
 // ============================================
 // 2. PLAY A SINGLE GAME

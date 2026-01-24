@@ -1,4 +1,5 @@
 import { Paper, Stack, Title, Text, Button, Group } from "@mantine/core";
+import { InfoTooltip } from "./common/InfoTooltip";
 import { useGameStore } from "../store/useGameStore";
 import {
   ResponsiveContainer,
@@ -21,6 +22,10 @@ export function TrainingPanel() {
   const handleTrain100 = () => runSimulation(100);
   const handleResetBrain = () => resetBrain();
 
+  const handleTrain50Random = () => runSimulation(50, "RANDOM");
+  const handleTrain50WinBlock = () => runSimulation(50, "WIN_BLOCK");
+  const handleTrain50Self = () => runSimulation(50, "SELF");
+
   return (
     <Paper p="md" radius="md" shadow="sm" withBorder>
       <Stack gap="md">
@@ -39,6 +44,40 @@ export function TrainingPanel() {
           <Button color="red" variant="light" onClick={handleResetBrain}>
             Reset Brain
           </Button>
+        </Group>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 12,
+          }}
+        >
+          <Text size="sm">Curriculum</Text>
+          <InfoTooltip label="Select a curriculum for training: Random, Smart (win/block), or Self-play." />
+        </div>
+        <Group>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Button variant="light" onClick={handleTrain50Random}>
+              Train vs Random (Basic)
+            </Button>
+            <InfoTooltip label="Beginner Mode: MENACE plays against a 'blind' opponent. Good for filling empty boxes." />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Button variant="light" onClick={handleTrain50WinBlock}>
+              Train vs Smart (Defense)
+            </Button>
+            <InfoTooltip label="Hard Mode: The opponent will block MENACE instantly. Forces MENACE to learn defense." />
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Button variant="light" onClick={handleTrain50Self}>
+              Train vs Self (Mastery)
+            </Button>
+            <InfoTooltip label="Expert Mode: MENACE plays against itself to find hidden weaknesses." />
+          </div>
         </Group>
 
         <Text size="sm">Total Games Trained: {stats.gamesPlayed}</Text>

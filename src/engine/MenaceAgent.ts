@@ -6,13 +6,7 @@
  * has beads representing move preferences.
  */
 
-import type {
-  Board,
-  Matchbox,
-  MenaceConfig,
-  MoveRecord,
-  Player,
-} from "./types";
+import type { Board, Matchbox, MoveRecord, Player } from "./types";
 import { getValidMoves } from "./gameUtils";
 import {
   getCanonicalState,
@@ -23,31 +17,17 @@ import {
 export type PlayStyle = "PROBABILISTIC" | "MASTER";
 
 /**
- * Default configuration for MENACE
- */
-const DEFAULT_CONFIG: MenaceConfig = {
-  initialBeadsEarly: 8, // First 3 moves (0-2 moves on board)
-  initialBeadsMid: 4, // Middle game (3-5 moves on board)
-  initialBeadsLate: 2, // Late game (6+ moves on board)
-  winReward: 3,
-  drawReward: 1,
-  lossReward: -1,
-};
-
-/**
  * MENACE Agent Class
  *
  * Implements the learning algorithm for playing Tic-Tac-Toe
  */
 export class MenaceAgent {
   private memory: Map<string, Matchbox>;
-  private config: MenaceConfig;
   private player: Player;
   private currentGameHistory: MoveRecord[];
 
-  constructor(player: Player, config: Partial<MenaceConfig> = {}) {
+  constructor(player: Player) {
     this.memory = new Map();
-    this.config = { ...DEFAULT_CONFIG, ...config };
     this.player = player;
     this.currentGameHistory = [];
   }

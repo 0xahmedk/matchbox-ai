@@ -18,6 +18,20 @@
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+.app-title {
+  font-family:
+    "Space Grotesk",
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #e6eef8;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);

@@ -14,6 +14,7 @@ import {
   type Board,
   type MoveRecord,
   MenaceAgent,
+  WinBlockAgent,
   createEmptyBoard,
   makeMove as makeGameMove,
   getValidMoves,
@@ -58,7 +59,10 @@ interface GameState {
     draws: number;
     losses: number;
   }>;
-  runSimulation: (batchSize: number) => void;
+  runSimulation: (
+    batchSize: number,
+    opponentType?: "RANDOM" | "WIN_BLOCK" | "SELF",
+  ) => void;
   resetBrain: () => void;
 
   // Play style (controls MENACE selection behaviour)
@@ -85,7 +89,7 @@ export const useGameStore = create<GameState>()(
       activeBoxId: null,
       currentBeads: null,
       history: [],
-      playStyle: "PROBABILISTIC",
+      playStyle: "MASTER",
       setPlayStyle: (style: "PROBABILISTIC" | "MASTER") =>
         set(() => ({ playStyle: style })),
       trainingStats: [],
@@ -264,16 +268,24 @@ export const useGameStore = create<GameState>()(
        * runs `batchSize` fast games (no UI updates), trains the temporary agent, then
        * exports memory back to the singleton `menaceAgent` so the UI agent learns.
        */
-      runSimulation: (batchSize: number) => {
+      runSimulation: (
+        batchSize: number,
+        opponentType: "RANDOM" | "WIN_BLOCK" | "SELF" = "RANDOM",
+      ) => {
         if (batchSize <= 0) return;
 
         // Train the singleton globalBrain in-place so UI immediately benefits
-        // Local counters for this batch
         let wins = 0;
         let draws = 0;
         let losses = 0;
 
         const brainPlayer = globalBrain.getPlayer();
+
+        // Prepare opponent implementations
+        let opponentAgent: WinBlockAgent | null = null;
+        if (opponentType === "WIN_BLOCK") {
+          opponentAgent = new WinBlockAgent(brainPlayer === "X" ? "O" : "X");
+        }
 
         for (let i = 0; i < batchSize; i++) {
           // Fresh board
@@ -282,6 +294,20 @@ export const useGameStore = create<GameState>()(
 
           // Reset any game history stored on the brain
           globalBrain.resetGameHistory();
+
+          // If SELF play, create a second MenaceAgent instance that shares memory with globalBrain
+          let selfOpponent: MenaceAgent | null = null;
+          if (opponentType === "SELF") {
+            // Create a new MenaceAgent that uses same player symbol as opponent
+            selfOpponent = new MenaceAgent(brainPlayer === "X" ? "O" : "X");
+            // Import existing memory so self play uses current knowledge
+            try {
+              const mem = globalBrain.exportMemory();
+              selfOpponent.importMemory(mem);
+            } catch {
+              // ignore import errors
+            }
+          }
 
           // Play until terminal
           while (true) {
@@ -301,12 +327,38 @@ export const useGameStore = create<GameState>()(
               board = makeGameMove(board, move, turn);
               turn = turn === "X" ? "O" : "X";
             } else {
-              // Random agent move
-              const valid = getValidMoves(board);
-              if (valid.length === 0) break;
-              const choice = valid[Math.floor(Math.random() * valid.length)];
-              board = makeGameMove(board, choice, turn);
-              turn = turn === "X" ? "O" : "X";
+              // Opponent move: RANDOM, WIN_BLOCK, or SELF (Menace)
+              if (opponentType === "RANDOM") {
+                const valid = getValidMoves(board);
+                if (valid.length === 0) break;
+                const choice = valid[Math.floor(Math.random() * valid.length)];
+                board = makeGameMove(board, choice, turn);
+                turn = turn === "X" ? "O" : "X";
+              } else if (opponentType === "WIN_BLOCK") {
+                if (opponentAgent) {
+                  const move = opponentAgent.getCommand(board);
+                  board = makeGameMove(board, move, turn);
+                } else {
+                  const valid = getValidMoves(board);
+                  if (valid.length === 0) break;
+                  const choice =
+                    valid[Math.floor(Math.random() * valid.length)];
+                  board = makeGameMove(board, choice, turn);
+                }
+                turn = turn === "X" ? "O" : "X";
+              } else if (opponentType === "SELF" && selfOpponent) {
+                // Use second MenaceAgent to make move
+                const move = selfOpponent.makeMove(board);
+                board = makeGameMove(board, move, turn);
+                turn = turn === "X" ? "O" : "X";
+              } else {
+                // Fallback to random
+                const valid = getValidMoves(board);
+                if (valid.length === 0) break;
+                const choice = valid[Math.floor(Math.random() * valid.length)];
+                board = makeGameMove(board, choice, turn);
+                turn = turn === "X" ? "O" : "X";
+              }
             }
           }
 

@@ -21,9 +21,17 @@ export function MatchboxTape() {
   }
 
   return (
-    <ScrollArea style={{ width: "100%" }} type="auto" offsetScrollbars>
+    <ScrollArea style={{ width: "100%" }} type="scroll" offsetScrollbars>
       <Box
-        style={{ display: "flex", gap: 12, padding: 12, alignItems: "center" }}
+        style={{
+          display: "flex",
+          gap: 12,
+          padding: 12,
+          alignItems: "center",
+          overflowX: "auto",
+          background: "#303b51",
+          borderRadius: 8,
+        }}
       >
         {history.map((h, idx) => {
           // Compute turn number from board snapshot: number of non-null squares indicates moves played
@@ -54,25 +62,26 @@ export function MatchboxTape() {
               {idx < history.length - 1 && (
                 <div
                   style={{
-                    width: 28,
-                    height: 2,
-                    background: "rgba(0,0,0,0.12)",
-                    marginLeft: 6,
-                    marginRight: 6,
+                    width: 44,
+                    height: 4,
+                    background: "rgba(255,255,255,0.18)",
+                    marginLeft: 8,
+                    marginRight: 8,
                     alignSelf: "center",
                     position: "relative",
+                    borderRadius: 3,
                   }}
                 >
                   <div
                     style={{
                       position: "absolute",
-                      right: -6,
-                      top: -6,
+                      right: -10,
+                      top: -8,
                       width: 0,
                       height: 0,
-                      borderTop: "8px solid transparent",
-                      borderBottom: "8px solid transparent",
-                      borderLeft: "8px solid rgba(0,0,0,0.12)",
+                      borderTop: "10px solid transparent",
+                      borderBottom: "10px solid transparent",
+                      borderLeft: "10px solid rgba(255,255,255,0.18)",
                     }}
                   />
                 </div>

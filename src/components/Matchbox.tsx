@@ -25,17 +25,24 @@ interface MatchboxProps {
 
 const styles: Record<string, CSSProperties> = {
   sleeve: {
-    background: "#F59F00",
+    // removed bright yellow sleeve for a cleaner UI; make it a compact square
+    background: "transparent",
     borderRadius: 8,
-    padding: 12,
+    padding: 8,
     boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-    minWidth: 220,
-    display: "inline-block",
+    width: 228,
+    height: 238,
+    display: "inline-flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
   },
   drawer: {
-    background: "#ffffff",
+    background: "#0f1724",
     borderRadius: 6,
     padding: 8,
+    width: "100%",
+    height: "calc(100% - 22px)",
   },
   label: {
     fontFamily: "monospace",
@@ -43,9 +50,10 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     textAlign: "center",
     marginBottom: 8,
+    color: "#e6eef8",
   },
   cell: {
-    minHeight: 64,
+    minHeight: 48,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -62,7 +70,7 @@ const BEAD_COLORS = [
   "#e53935", // red
   "#1e88e5", // blue
   "#43a047", // green
-  "#fdd835", // yellow
+  "#fdd83594", // yellow
   "#8e24aa", // purple
   "#00bcd4", // cyan
   "#fb8c00", // orange
@@ -149,10 +157,10 @@ export function Matchbox({
                       Empty
                     </Text>
                   ) : (
-                    <svg width={40} height={40} viewBox="0 0 40 40" aria-hidden>
+                    <svg width={36} height={36} viewBox="0 0 36 36" aria-hidden>
                       <circle
-                        cx={20}
-                        cy={20}
+                        cx={18}
+                        cy={18}
                         r={12}
                         fill={color}
                         stroke="rgba(0,0,0,0.12)"
@@ -160,9 +168,9 @@ export function Matchbox({
                       {count > 1 && (
                         <text
                           x="50%"
-                          y="52%"
+                          y="60%"
                           textAnchor="middle"
-                          fontSize={10}
+                          fontSize={12}
                           fontWeight={700}
                           fill="#fff"
                         >
