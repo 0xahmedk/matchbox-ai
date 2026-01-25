@@ -8,9 +8,12 @@ import { Title, Box } from "@mantine/core";
 interface GameInfoProps {
   isPlayerTurn: boolean;
   gameStatus: "PLAYING" | "WIN" | "LOSS" | "DRAW";
+  board?: ("X" | "O" | null)[];
 }
 
-export function GameInfo({ isPlayerTurn, gameStatus }: GameInfoProps) {
+export function GameInfo({ isPlayerTurn, gameStatus, board }: GameInfoProps) {
+  const isBoardEmpty = !board || board.every((c) => c === null);
+
   const getStatusMessage = () => {
     if (gameStatus === "WIN") {
       return {
@@ -38,6 +41,11 @@ export function GameInfo({ isPlayerTurn, gameStatus }: GameInfoProps) {
         text: "MENACE Thinking...",
         color: "gray",
       };
+    }
+
+    // If the board is empty and it's the player's turn, encourage starting
+    if (isBoardEmpty) {
+      return { text: "Start playing", color: "blue" };
     }
 
     return {

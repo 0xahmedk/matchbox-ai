@@ -32,6 +32,26 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+/* Responsive: smaller header on narrow viewports */
+@media (max-width: 600px) {
+  .app-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  /* header logo used as <img> in App.tsx, target typical sizes */
+  header img {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  /* make footer and header text slightly smaller */
+  header .mantine-Text-root,
+  footer .mantine-Text-root {
+    font-size: 0.8rem;
+  }
+}
+
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
