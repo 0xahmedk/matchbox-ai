@@ -22,6 +22,7 @@ import { TrainingPanel } from "./components/TrainingPanel";
 import { Switch, Box as MantineBox } from "@mantine/core";
 import { Bead } from "./components/Bead";
 import { InfoTooltip } from "./components/common/InfoTooltip";
+import { ViewCounter } from "./components/common/ViewCounter";
 import menace2Svg from "./assets/menace2.svg";
 import beadsOnBoard from "./assets/beads_on_board.png";
 import menace1Png from "./assets/menace1.png";
@@ -737,6 +738,9 @@ function App() {
                 Built with ❤️ by Ahmed
               </Text>
             </Box>
+
+            {/* View Counter */}
+            <ViewCounter />
           </Stack>
         </Container>
       </Box>
