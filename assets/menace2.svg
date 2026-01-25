@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="-33 -85 210 420">
+ <title>MENACE example</title>
+ <desc>An example game played by the Machine Educable Noughts And Crosses Engine (o) and a human (x) using Donald Michie's original colours and redrawn by CMG Lee based on http://chalkdustmagazine.com/features/menace-machine-educable-noughts-crosses-engine and http://people.csail.mit.edu/brooks/idocs/matchbox.pdf .</desc>
+ <defs>
+  <radialGradient id="grad_sphere" cx="50%" cy="50%" r="50%" fx="50%" fy="90%">
+   <stop offset="0%"  stop-color="#000000" stop-opacity="0"/>
+   <stop offset="99%" stop-color="#000000" stop-opacity="0.3"/>
+  </radialGradient>
+  <linearGradient id="grad_highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+   <stop offset="10%" stop-color="#ffffff" stop-opacity="0.9"/>
+   <stop offset="99%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+  <g id="orb" transform="scale(0.09)">
+   <circle  cx="0" cy="0" r="100"/>
+   <circle  cx="0" cy="0" r="100" fill="url(#grad_sphere)"/>
+   <ellipse cx="0" cy="-45" rx="70" ry="50" fill="url(#grad_highlight)" stroke="none"/>
+  </g>
+  <g id="orb_1"><use xlink:href="#orb" fill="#ffffff"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">1</text></g>
+  <g id="orb_2"><use xlink:href="#orb" fill="#9999ff"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">2</text></g>
+  <g id="orb_3"><use xlink:href="#orb" fill="#999999"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">3</text></g>
+  <g id="orb_4"><use xlink:href="#orb" fill="#000000"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">4</text></g>
+  <g id="orb_5"><use xlink:href="#orb" fill="#cccc00"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">5</text></g>
+  <g id="orb_6"><use xlink:href="#orb" fill="#00cc99"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">6</text></g>
+  <g id="orb_7"><use xlink:href="#orb" fill="#ff9900"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">7</text></g>
+  <g id="orb_8"><use xlink:href="#orb" fill="#ff0000"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">8</text></g>
+  <g id="orb_9"><use xlink:href="#orb" fill="#ff99ff"/><text x="0" y="0.7ex" stroke="#ffffff" stroke-opacity="0.5">9</text></g>
+  <path id="grid" d="M -30,-10 H 30 M -30,10 H 30 M -10,-30 V 30 M 10,-30 V 30" stroke="#000000" stroke-opacity="0.5"/>
+  <path id="box" d="M -30,-20 h 40 l 20,40 h -40 z v 20 l 20,40 v -20 M 0.5,40 v 20 l -10,-20 v -20 z h 39 v 20 h -39 m 39,-20 l -10,-20 m 5,20 v -10 m 0,0 l -15,10 m 1,0 l -25,-10" fill="#eeeeee" stroke="#999999"/>
+  <path   id="human" d="M -6,-6 L 6,6 M -6,6 L 6,-6"  stroke="#cc9966" stroke-width="3"/>
+  <circle id="menace" cx="0" cy="0" r="6" fill="none" stroke="#0099ff" stroke-width="3"/>
+  <marker id="marker" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+   <path d="M 0,1 L 7,4 L 0,7" fill="none" stroke="#999999"/>
+  </marker>
+ </defs>
+ <circle cx="0" cy="0" r="99999" fill="#ffffff"/>
+ <g font-family="Helvetica,Arial,sans-serif" font-weight="bold" font-size="16" text-anchor="middle" fill="#000000" stroke="none" stroke-width="0.7">
+  <g transform="translate(42,-50)">
+   <use xlink:href="#grid"/>
+   <use xlink:href="#orb_1" transform="translate(-20,-20)"/>
+   <use xlink:href="#orb_2" transform="translate(  0,-20)"/>
+   <use xlink:href="#orb_3" transform="translate( 20,-20)"/>
+   <use xlink:href="#orb_4" transform="translate(-20,  0)"/>
+   <use xlink:href="#orb_5" transform="translate(  0,  0)"/>
+   <use xlink:href="#orb_6" transform="translate( 20,  0)"/>
+   <use xlink:href="#orb_7" transform="translate(-20, 20)"/>
+   <use xlink:href="#orb_8" transform="translate(  0, 20)"/>
+   <use xlink:href="#orb_9" transform="translate( 20, 20)"/>
+  </g>
+  <g transform="translate(0,0)">
+   <g fill="none" stroke="#999999" marker-end="url(#marker)">
+    <path d="M 20,-14 q 20,-8 40,0"/>
+    <path d="M 103,20 h 10"/>
+    <path d="M 140,50 q 0,15 -120,25"/>
+   </g>
+   <use xlink:href="#box"/>
+   <use xlink:href="#grid"   transform="matrix(0.25,0.5 -0.5,0 0,0)"/>
+   <use xlink:href="#orb_2"  transform="translate(19,29.5)"/>
+   <g transform="translate(72,20)">
+    <g id="step_1">
+     <use xlink:href="#grid"/>
+     <use xlink:href="#menace" transform="translate(  0,-20)"/>
+    </g>
+   </g>
+   <g transform="translate(145,20)">
+    <g id="step_2">
+     <use xlink:href="#step_1"/>
+     <use xlink:href="#human"  transform="translate(  0,  0)"/>
+    </g>
+   </g>
+  </g>
+  <g transform="translate(0,90)">
+   <use xlink:href="#box"/>
+   <use xlink:href="#step_2" transform="matrix(0.25,0.5 -0.5,0 0,0)"/>
+   <use xlink:href="#orb_1"  transform="translate(19,29.5)"/>
+   <g transform="translate(72,20)">
+    <g id="step_3">
+     <use xlink:href="#step_2"/>
+     <use xlink:href="#menace" transform="translate(-20,-20)"/>
+    </g>
+   </g>
+   <g transform="translate(145,20)">
+    <g id="step_4">
+     <use xlink:href="#step_3"/>
+     <use xlink:href="#human"  transform="translate( 20,-20)"/>
+    </g>
+   </g>
+  </g>
+  <g transform="translate(0,180)">
+   <use xlink:href="#box"/>
+   <use xlink:href="#step_4" transform="matrix(0.25,0.5 -0.5,0 0,0)"/>
+   <use xlink:href="#orb_7"  transform="translate(19,29.5)"/>
+   <g transform="translate(72,20)">
+    <g id="step_5">
+     <use xlink:href="#step_4"/>
+     <use xlink:href="#menace" transform="translate(-20, 20)"/>
+    </g>
+   </g>
+   <g transform="translate(145,20)">
+    <g id="step_6">
+     <use xlink:href="#step_5"/>
+     <use xlink:href="#human" transform="translate(-20,  0)"/>
+    </g>
+   </g>
+  </g>
+  <g transform="translate(0,270)">
+   <use xlink:href="#box"/>
+   <use xlink:href="#step_6" transform="matrix(0.25,0.5 -0.5,0 0,0)"/>
+   <use xlink:href="#orb_9"  transform="translate(19,29.5)"/>
+   <g transform="translate(72,20)">
+    <g id="step_7">
+     <use xlink:href="#step_6"/>
+     <use xlink:href="#menace" transform="translate( 20, 20)"/>
+    </g>
+   </g>
+   <g transform="translate(145,20)">
+    <g id="step_8">
+     <use xlink:href="#step_7"/>
+     <use xlink:href="#human" transform="translate( 20,  0)"/>
+     <path d="M -30,0 H 30" stroke="#cc0000" stroke-width="2"/>
+    </g>
+   </g>
+  </g>
+ </g>
+</svg>
