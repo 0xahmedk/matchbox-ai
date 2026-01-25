@@ -22,6 +22,10 @@ import { TrainingPanel } from "./components/TrainingPanel";
 import { Switch, Box as MantineBox } from "@mantine/core";
 import { Bead } from "./components/Bead";
 import { InfoTooltip } from "./components/common/InfoTooltip";
+import menace2Svg from "./assets/menace2.svg";
+import beadsOnBoard from "./assets/beads_on_board.png";
+import menace1Png from "./assets/menace1.png";
+import menace_logo from "./assets/menace_logo.png";
 
 function App() {
   // Mobile warning state
@@ -72,8 +76,8 @@ function App() {
             <Box hiddenFrom="sm">
               <Stack gap="md" align="center">
                 <Box style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <img
-                    src="/menace_logo.png"
+                  <Image
+                    src={menace_logo}
                     alt="MENACE Logo"
                     style={{ width: 28, height: 28 }}
                   />
@@ -191,8 +195,8 @@ function App() {
               visibleFrom="sm"
             >
               <Box style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <img
-                  src="/menace_logo.png"
+                <Image
+                  src={menace_logo}
                   alt="MENACE Logo"
                   style={{ width: 28, height: 28 }}
                 />
@@ -455,7 +459,7 @@ function App() {
             </Text>
 
             <Image
-              src="/assets/menace2.svg"
+              src={menace2Svg}
               alt="MENACE historic diagram"
               fit="contain"
               radius="md"
@@ -603,7 +607,7 @@ function App() {
             </Text>
             <div style={{ maxWidth: 380, margin: "0 auto", marginTop: 12 }}>
               <Image
-                src="/assets/beads_on_board.png"
+                src={beadsOnBoard}
                 alt="Beads on a matchbox board"
                 fit="contain"
                 radius="md"
@@ -645,7 +649,7 @@ function App() {
             </Text>
 
             <Image
-              src="/assets/menace1.png"
+              src={menace1Png}
               alt="MENACE demonstration photograph"
               fit="contain"
               radius="md"
@@ -724,8 +728,8 @@ function App() {
                 gap: 8,
               }}
             >
-              <img
-                src="/menace_logo.png"
+              <Image
+                src={menace_logo}
                 alt="MENACE Logo"
                 style={{ width: 20, height: 20 }}
               />
