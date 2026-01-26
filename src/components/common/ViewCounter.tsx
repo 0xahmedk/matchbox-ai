@@ -3,7 +3,7 @@ import { Badge, Box } from "@mantine/core";
 import { Eye } from "lucide-react";
 import { Counter } from "counterapi";
 
-const QUIRKY_LABELS = ["Lab Visitors", "Curious Minds"] as const;
+const QUIRKY_LABELS = ["Curious Minds"] as const;
 
 // Type for the v2 API response
 interface CounterV2Response {
