@@ -9,7 +9,7 @@
 
 Originally built in 1961 by Donald Michie using 304 matchboxes and thousands of colored beads, this project brings that mechanical computer to life in the browser. It demonstrates how "dumb" objects can learn complex strategies through trial, error, and probability.
 
-🔗 **[Live Demo](https://0xahmedk.github.io/matchbox-ai)** *(Coming Soon)*
+🔗 **[Live Demo](https://0xahmedk.github.io/matchbox-ai)** 
 
 ---
 
